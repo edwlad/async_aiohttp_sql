@@ -30,7 +30,7 @@ async def handle(request: web.Request) -> web.Response:
 
     # обработка Response
     if resp is None:
-        resp = web.Response(status=404, charset='utf-8')
+        resp = web.Response(status=404, text='Error')
     if resp.content_type == 'text/plain':
         resp.text += f'\n\n=== Запрос № {cnt} ===\n'
 
