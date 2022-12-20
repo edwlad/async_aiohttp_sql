@@ -1,9 +1,9 @@
 import asyncpg
 from random import randint
 
-DB_NAME = 'course'
+DB_NAME = 'postgres'
 DB_USER = 'postgres'
-DB_PASS = 'postgres'
+DB_PASS = ''
 DB_HOST = 'localhost'
 DB_PORT = '5432'
 
@@ -34,7 +34,7 @@ async def clear(pool):
         CREATE TABLE item (
             id serial PRIMARY KEY,
             name varchar,
-            price real
+            price integer
         );
     ''')
     await pool.execute('''
@@ -53,14 +53,14 @@ async def create(pool):
     await pool.execute(
         "INSERT INTO store (address) "
         + "VALUES ("
-        + "), (".join(f"'store-{v}'" for v in range(50))
+        + "), (".join(f"'store-{v+1}'" for v in range(50))
         + ");"
     )
 
     await pool.execute(
         "INSERT INTO item (name, price) "
         + "VALUES ("
-        + "), (".join(f"'item-{v}', {randint(100, 10000)/100}" for v in range(50))
+        + "), (".join(f"'item-{v+1}', {randint(100, 10000)}" for v in range(50))
         + ");"
     )
 

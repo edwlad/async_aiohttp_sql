@@ -9,17 +9,15 @@ async def main(req: web.Request) -> web.Response:
     mm = int(req.query.get('mm', date.today().month))
 
     res = await req['pool'].fetch(f'''
-        SELECT
-            st.*,
-            ROUND(SUM(it.price)*100)/100 AS income
-        FROM sales AS sa, store AS st, item AS it
-        WHERE st.id = sa.store_id
-            AND it.id = sa.item_id
-            AND extract(month from sa.sale_time) = {mm}
-        GROUP BY sa.sale_time, st.id
+        SELECT store.*, SUM(item.price) AS income
+        FROM sales, store, item
+        WHERE store.id = sales.store_id
+            AND item.id = sales.item_id
+            AND extract(month from sales.sale_time) = {mm}
+        GROUP BY store.id
         ORDER BY income DESC
         LIMIT {cnt}
         ;
     ''')
 
-    return web.json_response([dict(v.items()) for v in res])
+    return web.json_response(list(map(dict, res)))

@@ -15,4 +15,4 @@ async def main(req: web.Request) -> web.Response:
         ;
     ''')
 
-    return web.json_response([dict(v.items()) for v in res])
+    return web.json_response(list(map(dict, res)))
