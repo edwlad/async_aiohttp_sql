@@ -1,5 +1,6 @@
 #! python3
 
+from datetime import datetime
 from aiohttp import web
 import db_asyncpg as db
 import index
@@ -11,8 +12,6 @@ import sales
 
 DB_KEY = 'pool'
 
-cnt = 0  # счётчик запросов
-
 
 async def create_pool(app: web.Application) -> None:
     app[DB_KEY] = await db.pool()
@@ -23,8 +22,6 @@ async def close_pool(app: web.Application) -> None:
 
 
 async def handle(request: web.Request) -> web.Response:
-    global cnt
-    cnt += 1
     path = request.match_info.get('path', '')
     request['pool'] = app[DB_KEY]
     resp: web.Response | None = None
@@ -48,7 +45,7 @@ async def handle(request: web.Request) -> web.Response:
     if resp is None:
         resp = web.Response(status=404, text='Error')
     if resp.content_type == 'text/plain':
-        resp.text += f'\n\n=== Запрос № {cnt} ===\n'
+        resp.text += f'\n\n=== Дата {datetime.today()} ===\n'
 
     return resp
 

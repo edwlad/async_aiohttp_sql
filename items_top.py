@@ -2,7 +2,7 @@ from aiohttp import web
 
 
 async def main(req: web.Request) -> web.Response:
-    print('run:', __name__, 'url:', req.url)
+    print('\nrun:', __name__, 'url:', req.url)
 
     cnt = int(req.query.get('cnt', 10))
     res = await req['pool'].fetch(f'''

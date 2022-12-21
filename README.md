@@ -18,13 +18,144 @@
 - использовать *postgres* или *sqlite* в качестве базы.
 - использовать асинхронный веб-фреймворк и асинхронный драйвер подключения к баз данных на свой выбор.
 
-## Рализация
+## Реализация
 
 ### Используемые модули, структура
 
-1. Python v 3.10  
-1. aiohttp
+Интерпретатор [**Python v 3.10**](https://www.python.org/). Вэб сервер [**aiohttp**](https://docs.aiohttp.org/en/stable/). База данных [**PostgreSQL**](https://www.postgresql.org/). 
+Доступ к базам [**asyncpg**](https://magicstack.github.io/asyncpg/current/).
 
-### Запуск и работа
+Структура таблиц:
 
-1. sart.py
+`CREATE TABLE store (`  
+`id serial primary key,`  
+`address varchar);`
+
+`CREATE TABLE item (`  
+`id serial primary key,`  
+`name varchar,`  
+`price integer);`
+
+`CREATE TABLE sales (`  
+`id serial primary key,`  
+`sale_time timestamp not null default 'now()',`  
+`item_id integer references item (id),`  
+`store_id integer references store (id));`
+
+### Конфигурация, запуск
+
+Конфигурация подключения к базе в файле [db_asyncpg.py](db_asyncpg.py):  
+`DB_NAME = 'postgres'` - имя базы  
+`DB_USER = 'postgres'` - имя пользователя  
+`DB_PASS = ''` - пароль пользователя  
+`DB_HOST = 'localhost'` - хост базы  
+`DB_PORT = '5432'` - порт базы
+
+Запуск с помощью скрипта - [start.py](start.py)
+
+### Работа, команды
+**/** - Домашняя страница  
+>Пример обращения: `localhost:8080/`
+
+<hr>
+
+**/clear/** (*GET-запрос*)- создать пустые (не заполненные) таблицы.  
+>Пример обращения: `localhost:8080/clear/`
+
+<hr>
+
+**/create/** (*GET-запрос*) - пересоздать таблицы и заполнить данными. Генерирются записи: 50 товаров, 50 магазинов, 3600 случайных записей продаж (по 300 продаж на каждый месяц).
+>Пример обращения: `localhost:8080/create/`
+
+<hr>
+
+**/items/** (*GET-запрос*) - получение всех товарных позиций.  
+>Пример обращения: `localhost:8080/items/`
+
+Формат ответа - список объектов (*json*):
+- `id` (*число*) - код товара
+- `name` (*строка*) - название товара
+- `price` (*число*) - цена товара
+
+>Пример ответа:  
+`[{"id": 36, "name": "item-36"б "price": 618}, {"id": 37, "name": "item-37"б "price": 4803}]`
+
+<hr>
+
+**/items/top/** (*GET-запрос*) - получение данных по топ самых продаваемых товаров.  Возможные параметры:
+- `cnt` (*число*) - количество магазинов для вывода. По умолчанию - 10.
+
+>Примеры обращения:  
+`localhost:8080/items/top/`  
+`localhost:8080/items/top/?cnt=15`
+
+Формат ответа - список объектов (*json*):
+- `id` (*число*) - код товара
+- `name` (*строка*) - название товара
+- `sales_amount` (*число*) - количество продаж за всё время
+
+>Пример ответа:  
+`[{"id": 36, "name": "item-36", "sales_amount": 96}, {"id": 37, "name": "item-37", "sales_amount": 90}]`
+
+<hr>
+
+**/stores/** (*GET-запрос*) - получение всех магазинов.  
+>Пример обращения: `localhost:8080/stores/`
+
+Формат ответа - список объектов (*json*):
+- `id` (*число*) - код магазина
+- `address` (*строка*) - адрес магазина
+
+>Пример ответа:  
+`[{"id": 1, "address": "store-1"}, {"id": 2, "address": "store-2"}]`
+
+<hr>
+
+**/stores/top/** (*GET-запрос*) - получение данных по топ самых доходных магазинов за месяц.  Возможные параметры:
+- `cnt` (*число*) - количество магазинов для вывода. По умолчанию - 10.
+- `mm` (*число*) - номер месяца (от 1 до 12), за который выводить топ товаров. По умолчанию - текущий месяц.
+
+>Примеры обращения:  
+`localhost:8080/stores/top/`  
+`localhost:8080/stores/top/?cnt=7`  
+`localhost:8080/stores/top/?mm=9`  
+`localhost:8080/stores/top/?cnt=7&mm=9`
+
+Формат ответа - список объектов (*json*):
+- `id` (*число*) - код магазина
+- `address` (*строка*) - адрес магазина
+- `income` (*число*) - сумма продаж за месяц
+
+>Пример ответа:  
+`[{"id": 6, "address": "store-6", "income": 61149}, {"id": 42, "address": "store-42", "income": 45921}]`
+
+<hr>
+
+**/sales/** (*POST-запрос*) - запрос с *json-телом* для сохранения данных о произведенной продаже.
+
+Необходимые параметры:
+- `item_id` (*число*) - код товара.
+- `store_id` (*число*) - код магазина.
+
+>Пример обращения:  
+`localhost:8080/sales/`
+
+>Пример json-тела:  
+`{"item_id": 24, "store_id": 42}`
+
+Формат ответа - объект (*json*):
+- при успешной операции - возврат записаных данных
+  - `id` (*число*) - код записи
+  -	`sale_time` (*строка*) - дата записи
+  -	`item_id` (*число*) - код товара
+  -	`store_id` (*число*) - код магазина
+- при ошибке записи
+  - `error` - описание ошибки
+
+>Пример ответа при успешной записи:   
+`{"id": 3608, "sale_time": "2022-12-21 05:22:18.929649", "item_id": 24, "store_id": 50}`
+
+>Примеры ответов при ошибке:  
+`{"error": "SQL: insert or update on table \"sales\" violates foreign key constraint \"sales_store_id_fkey\"\nDETAIL:  Key (store_id)=(55) is not present in table \"store\"."}`
+
+>`{"error": "JSON: Expecting property name enclosed in double quotes: line 1 column 32 (char 31)"}`
