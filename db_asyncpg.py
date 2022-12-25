@@ -1,5 +1,6 @@
 import asyncpg
 from random import randint
+from datetime import date
 
 DB_NAME = 'postgres'
 DB_USER = 'postgres'
@@ -64,12 +65,13 @@ async def create(pool):
         + ");"
     )
 
+    gg = date.today().year
     for mm in range(1, 13):
         await pool.execute(
             "INSERT INTO sales (sale_time, item_id, store_id) "
             + "VALUES ("
             + "), (".join(
-                f"'2022-{mm:02}-{randint(1, 28):02}'::timestamp, {randint(1, 50)}, {randint(1, 50)}"
+                f"'{gg}-{mm:02}-{randint(1, 28):02}'::timestamp, {randint(1, 50)}, {randint(1, 50)}"
                 for _ in range(300))
             + ");"
         )
